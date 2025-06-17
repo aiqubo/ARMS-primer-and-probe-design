@@ -1,13 +1,14 @@
-#** **ARMS-PCR Primer Design Tool
-Overview
+# ARMS-PCR Primer Design Tool
+
+# Overview
 The ARMS-PCR Primer Design Tool is a Python-based bioinformatics application designed to generate highly specific primers for Amplification Refractory Mutation System (ARMS) PCR. 
 
-Installation Requirements:
+# Installation Requirements:
 Python 3.9+
 Primer3
 Required Python packages: sys, os, subprocess, re, json, argparse, datetime
 
-** **Usage:
+# Usage:
 
 python (Supports HTML Output) [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
 
@@ -20,11 +21,12 @@ optional arguments:
   --param PARAM         Custom parameters from JSON file (default: parameterDefault.json)
   --output OUTPUT       Output HTML file
 
-Input Requirements
+# Input Requirements
 The input FASTA file must contain exactly one SNP site formatted as [WildType/Mutation], e.g., [A/G]. Example:
 > test
 TAACTATACTAAGGCGTGACGTCATCTAAACTATGTGCCTCCGGGGTCCGTGCGCGTTGTTAGCTCCTTTACCACCACTATTACGAGTCGCCTAAAGAGGACAACCCGCTCAAAATGACTGGGTACGCTATTTCTACTTAGGCCCCACAGGATCTCCAAGCATATCAGTGTGGGGTATCACACTAGACTGGGGTGATGCCGCCGCCGCGTCGCGGGTGTTGATATAAATAGCCATTGGCATTTTTGGGTTAGAGGCCGGCCAGCTTCAGGAGTCCTATGCATAACACTTTAAGTTTGGCTCGTTGTCACCCCCCCACGTCTTGCCTGGCAGAATTGATTCTACTCCCTTAATACGTAGAGTGCTCAGTCCTATCTCTCTTCAAGCCCGTGTCTAAACAGAAGATGCGGGACGTGCCTACCCGTCATCTCATTTGCGCCCCAAACGTTTCTGAGAGACGTCTTCTAGTTCTTCACAGAGTAAAGTAGTTAAGTTCTTGTAC[G/C]CGCCATTGTATTCATGGTACGCAGGCTCAAGACGCGCGCCATCCCCAAATTCTCCGAAGGGTAATCGGTCAATAGCGCTCGGCACCCCTCTCAGTTGACTATAGATTTAAGAGAAGTCACCATCCCTTCGGGCAGCCGGATTCCAGCTAGTGCGAGACAATTTTAAGAGAATACACGATGGTAGAGGTCGGGCCTAACGCTATAGGTTCGTAGAGTAAACATAGTGTAGGTTGTAGGATCCCCCAGACCCTTGGGTCCATATCAACCAACATGCTTAACATTAAGCGCCGAAGGCGGAAACCGCCTGATATCTGTTTTTGGTGGAAGGCGTGAAAAAGAGATGTTACGTCAGTCTCGCGCACCCGTATATCGCAGTAAATCCGTGAGTTTACCCGCGTTTGCGTTTCATTAGATTACCACGTCGGGTACACAACCTACTCAACATTTGGTACCTGTACAGGAGCTTCACTATCATTATAGTGAACGAGATGTTCCAAAGG
 
+# Cite
 The main content of this work was not independently completed. Here, ABM-PCR and ARMSprimer3 are integrated. Please cite：
 Lau, Cia-Hin et al. “Artificial base mismatches-mediated PCR (ABM-PCR) for detecting clinically relevant single-base mutations.” Clinical chemistry and laboratory medicine vol. 63,7 1301-1314. 17 Mar. 2025
 Guo, Jingwen et al. “ARMSprimer3: An open-source primer design Python program for amplification refractory mutation system PCR (ARMS-PCR).” Journal of pathology informatics vol. 17 100442. 15 Apr. 2025
