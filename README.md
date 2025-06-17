@@ -10,7 +10,7 @@ Required Python packages: sys, os, subprocess, re, json, argparse, datetime
 
 ## Usage:
 
-python (Supports HTML Output) [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
+python ARMS_complete.py [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
 
 optional arguments:
   -h, --help  show this help message and exit
