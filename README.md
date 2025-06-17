@@ -13,13 +13,16 @@ Required Python packages: sys, os, subprocess, re, json, argparse, datetime
 python ARMS_complete.py [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
 
 **optional arguments:**
-  |-h, --help          |#show this help message and exit\
-  |--versio            |#show program's version number and exit\
-  |--fasta FASTA       |#Input FASTA file (required)\
-  |--length LENGTH     |#Length of PCR template (default: 1001)\
-  |--nomask            |#Do not mask common SNPs in template\
-  |--param PARA        |#Custom parameters from JSON file (default: parameterDefault.json)\
-  |--output OUTPUT     |#Output HTML file
+| Arguments      | Note |
+| -------------  | -----------------------------------------------------------------------------------------------|
+| -h, --help     | #show this help message and exit                                                               |
+|  --version     |#show program's version number and exit                                                         |
+| --fasta FASTA  | #Input FASTA file (required)                                                                   |
+|--length LENGTH |#Length of PCR template (default: 1001)                                                         |
+|--nomask        |#Do not mask common SNPs in template                                                            |
+|--param PARA    |#Custom parameters from JSON file (default: parameterDefault.json)                              |
+|--output OUTPUT |#Output HTML file                                                                               |
+
 
 ## Input Requirements
 The input FASTA file must contain exactly one SNP site formatted as [WildType/Mutation], e.g., [A/G]. Example:
