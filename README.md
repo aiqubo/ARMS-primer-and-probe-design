@@ -12,6 +12,11 @@ Required Python packages: sys, os, subprocess, re, json, argparse, datetime
 
 python ARMS_complete.py [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
 
+**example:**
+```
+python ARMS_complete.py --fasta test.fasta --output result.html
+```
+
 **optional arguments:**
 | Arguments      | Note |
 | -------------  | -----------------------------------------------------------------------------------------------|
