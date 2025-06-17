@@ -10,7 +10,6 @@ class ScreenOutput:
     @staticmethod
     def add(c):
         ScreenOutput.contents += f"{c}\n"
-        print(c)
     @staticmethod
     def writeScreenOutputToFile(filename):
         with open(filename, 'w') as f:
@@ -32,8 +31,7 @@ class PcrTemplate:
         return PcrTemplate(self.template[:pos] + mutAllele + self.template[pos + 1:])
 
 def complement(c):
-    return {'a': 't', 't': 'a', 'c': 'g', 'g': 'c',
-            'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}.get(c, c)
+    return {'a': 't', 't': 'a', 'c': 'g', 'g': 'c', 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}.get(c, c)
 
 def complementString(s):
     return ''.join([complement(c) for c in s])
@@ -150,26 +148,42 @@ def getAllArmsTemplates(snpID, wtAllele, mutAllele, pcrMaskedTemplate):
         ScreenOutput.add(f"\nMutation template (-{dist + 1})")
         designPrimers(mut_filename)
 
-class ABMPCRPrimerDesigner:
-    def __init__(self, sequence):
+def highlight_sequence(sequence, primer_index):
+    if not sequence:
+        return sequence
+    sequence = re.sub(r'\033\[38;2;0;0;255m(.*?)\033\[0m', r'BLUE_HIGHLIGHT_START\1BLUE_HIGHLIGHT_END', sequence)
+    if primer_index == 0 or primer_index == 1:
+        if len(sequence) >= 2:
+            sequence = f"{sequence[:-2]}\033[38;2;0;0;255m{sequence[-2]}\033[0m\033[38;2;255;0;0m{sequence[-1]}\033[0m"
+    elif primer_index == 2 or primer_index == 3:
+        if len(sequence) >= 3:
+            sequence = f"{sequence[:-3]}\033[38;2;0;0;255m{sequence[-3]}\033[0m{sequence[-2]}\033[38;2;255;0;0m{sequence[-1]}\033[0m"
+    sequence = re.sub(r'BLUE_HIGHLIGHT_START(.*?)BLUE_HIGHLIGHT_END', r'\033[38;2;0;0;255m\1\033[0m', sequence)
+    return sequence
+
+class ARMSPCRPrimerDesigner:
+    def __init__(self, sequence, primer_index=None):
         self.sequence = re.sub(r'[^ACGT]', '', sequence.upper())
+        self.primer_index = primer_index
     def validate_sequence(self):
         if not self.sequence:
             return False, "Error: Sequence is empty"
-        if not re.match(r'^[ATCG]+$', self.sequence):
+        if not re.match(r'^[ACGT]+$', self.sequence):
             return False, f"Error: Sequence contains invalid characters: {set(self.sequence) - set('ACGT')}"
         if len(self.sequence) < 18 or len(self.sequence) > 27:
             return False, "Error: Sequence length should be 18-27 bases"
         return True, ""
     def process_dna(self):
-        valid, msg = self.validate_sequence()
+        valid, message = self.validate_sequence()
         if not valid:
-            return msg
-        return self.process_last_base()
-    def process_last_base(self):
+            return message
         n = len(self.sequence)
-        result = f"ARMS-PCR Primer Sequence: {self.sequence}\nTotal bases: {n}\n\n"
-        result += f"{self.sequence[:-1]}\033[38;2;255;0;0m{self.sequence[-1]}\033[0m\n\n"
+        highlighted_seq = highlight_sequence(self.sequence, self.primer_index) if self.primer_index is not None else self.sequence
+        result = f"ARMS-PCR Primer Sequence: {highlighted_seq}\nTotal bases: {n}\n\n"
+        seq_line = self.sequence
+        if self.primer_index is not None:
+            seq_line = highlight_sequence(seq_line, self.primer_index)
+        result += f"{seq_line}\n\n"
         result += self.apply_rule_p(n)
         return result
     def apply_rule_p(self, n):
@@ -179,10 +193,15 @@ class ABMPCRPrimerDesigner:
         for i in range(end, start - 1, -1):
             modified_sequence = list(self.sequence)
             if modified_sequence[i] in 'CGTA':
-                color = '\033[38;2;0;0;255m'
                 replacement = {'C': 'T', 'G': 'A', 'T': 'A', 'A': 'T'}[modified_sequence[i]]
-                modified_sequence[i] = f"{color}{replacement}\033[0m"
-                result += f"Modification at position {i+1}: {''.join(modified_sequence)}\n"
+                modified_sequence[i] = replacement
+                modified_str = ''.join(modified_sequence)
+                if self.primer_index is not None:
+                    modified_str = list(modified_str)
+                    modified_str[i] = f"\033[38;2;0;0;255m{modified_str[i]}\033[0m"
+                    modified_str = ''.join(modified_str)
+                    modified_str = highlight_sequence(modified_str, self.primer_index)
+                result += f"Modification at position {i+1}: {modified_str}\n"
         return result or "No modifications made\n"
 
 class FileOutputHandler:
@@ -197,14 +216,13 @@ class FileOutputHandler:
                 self._save_to_html(content)
             else:
                 with open(self.output_path, 'w', encoding='utf-8') as f:
-                    f.write(re.sub(r'\033\[[0-9;]+m', '', content))
-                print(f"Results saved to text file: {self.output_path}")
+                    f.write(content)
         except Exception as e:
-            print(f"Error saving file: {str(e)}")
+            ScreenOutput.add(f"Error saving file: {str(e)}")
     def _save_to_html(self, content):
-        html_content = content.replace("\033[38;2;255;0;0m", "<span style='color:red;'>")
-        html_content = html_content.replace("\033[38;2;0;0;255m", "<span style='color:blue;'>")
-        html_content = html_content.replace("\033[0m", "</span>")
+        html_content = content
+        html_content = re.sub(r'\033\[38;2;255;0;0m(.*?)\033\[0m', r'<span class="red">\1</span>', html_content)
+        html_content = re.sub(r'\033\[38;2;0;0;255m(.*?)\033\[0m', r'<span class="blue">\1</span>', html_content)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         html = f"""
         <!DOCTYPE html>
@@ -212,18 +230,19 @@ class FileOutputHandler:
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>ABM-PCR Primer Design Results</title>
+            <title>ARMS-PCR Primer Design Results</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                .red {{ color: red; }}
-                .blue {{ color: blue; }}
-                pre {{ white-space: pre-wrap; }}
+                .red {{ color: red; font-weight: bold; }}
+                .blue {{ color: blue; font-weight: bold; }}
+                pre {{ white-space: pre-wrap; font-family: monospace; font-size: 1.1em; }}
                 h2 {{ color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }}
                 hr {{ border: 0; border-top: 1px solid #eee; margin: 20px 0; }}
+                .primer {{ font-family: monospace; font-size: 1.1em; }}
             </style>
         </head>
         <body>
-            <h1>ABM-PCR Primer Design Results</h1>
+            <h1>ARMS-PCR Primer Design Results</h1>
             <p>Generated on: {timestamp}</p>
             <p>A total of {len(primers)} primer sequences were found</p>
             {all_html_content}
@@ -232,11 +251,11 @@ class FileOutputHandler:
         """
         with open(self.output_path, 'w', encoding='utf-8') as f:
             f.write(html)
-        print(f"Results saved to HTML file: {self.output_path}")
+        ScreenOutput.add(f"Results saved to HTML file: {self.output_path}")
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="ABM-PCR Primer Design Tool (Supports HTML Output)")
-    parser.add_argument("--version", action="version", version="ABM-PCR Primer Designer 1.0")
+    parser = argparse.ArgumentParser(description="ARMS-PCR Primer Design Tool (Supports HTML Output)")
+    parser.add_argument("--version", action="version", version="ARMS-PCR Primer Designer 1.0")
     parser.add_argument("-f", "--fasta", type=str, required=True, help="Input FASTA file (required)")
     parser.add_argument("--length", type=int, default=1001, help="Length of PCR template (default: 1001)")
     parser.add_argument("--nomask", action="store_true", help="Do not mask common SNPs in template")
@@ -279,25 +298,15 @@ def extract_primers(file_path):
                             primer_neg3_left = lines[j].split()[-1]
                             break
     except FileNotFoundError:
-        print(f"Error: File {file_path} not found")
+        ScreenOutput.add(f"Error: File {file_path} not found")
     except Exception as e:
-        print(f"Error processing file: {e}")
+        ScreenOutput.add(f"Error processing file: {e}")
     return (primer_neg2_right, primer_neg2_left, primer_neg3_right, primer_neg3_left)
 
 def highlight_primer(primer, index):
     if not primer:
         return primer
-    if index == 0 or index == 1:  # Primer 1 和 Primer 2
-        if len(primer) >= 2:
-            return f"{primer[:-2]}<span class='blue'>{primer[-2]}</span><span class='red'>{primer[-1]}</span>"
-        elif len(primer) >= 1:
-            return f"{primer[:-1]}<span class='red'>{primer[-1]}</span>"
-    elif index == 2 or index == 3:  # Primer 3 和 Primer 4
-        if len(primer) >= 3:
-            return f"{primer[:-3]}<span class='blue'>{primer[-3]}</span>{primer[-2]}<span class='red'>{primer[-1]}</span>"
-        elif len(primer) >= 1:
-            return f"{primer[:-1]}<span class='red'>{primer[-1]}</span>"
-    return primer
+    return highlight_sequence(primer, index)
 
 if __name__ == '__main__':
     args = parse_arguments()
@@ -314,12 +323,12 @@ if __name__ == '__main__':
         if os.path.exists(param_file):
             os.rename(param_file, 'parameterOverride.json')
         else:
-            print(f"Error: Parameter file {param_file} not found")
+            ScreenOutput.add(f"Error: Parameter file {param_file} not found")
             sys.exit(1)
     try:
         sequence, wtAllele, mutAllele, snp_pos, output_dir = parseFastaFile(fasta_file)
     except Exception as e:
-        print(f"Error parsing FASTA file: {e}")
+        ScreenOutput.add(f"Error parsing FASTA file: {e}")
         sys.exit(1)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -334,18 +343,19 @@ if __name__ == '__main__':
     getAllArmsTemplates(output_dir, wtAllele, mutAllele, pcrMaskedTemplate)
     ScreenOutput.writeScreenOutputToFile(f"{output_dir}/screenOutput.txt")
     primers = extract_primers(f"{output_dir}/screenOutput.txt")
-    print(f"\nSuccessfully extracted {len(primers)} primer sequences")
+    ScreenOutput.add(f"\nSuccessfully extracted {len(primers)} primer sequences")
     all_html_content = ""
     for i, primer in enumerate(primers):
         if primer:
-            designer = ABMPCRPrimerDesigner(primer)
+            designer = ARMSPCRPrimerDesigner(primer, i)
             result = designer.process_dna()
-            print(result)
-            html_content = result.replace("\033[38;2;255;0;0m", "<span class='red'>")
-            html_content = html_content.replace("\033[38;2;0;0;255m", "<span class='blue'>")
-            html_content = html_content.replace("\033[0m", "</span>")
+            html_result = result
+            html_result = re.sub(r'\033\[38;2;255;0;0m(.*?)\033\[0m', r'<span class="red">\1</span>', html_result)
+            html_result = re.sub(r'\033\[38;2;0;0;255m(.*?)\033\[0m', r'<span class="blue">\1</span>', html_result)
             highlighted_primer = highlight_primer(primer, i)
-            all_html_content += f"<h2>Primer {i + 1}: {highlighted_primer}</h2><pre>{html_content}</pre><hr>"
+            highlighted_primer_html = re.sub(r'\033\[38;2;255;0;0m(.*?)\033\[0m', r'<span class="red">\1</span>', highlighted_primer)
+            highlighted_primer_html = re.sub(r'\033\[38;2;0;0;255m(.*?)\033\[0m', r'<span class="blue">\1</span>', highlighted_primer_html)
+            all_html_content += f"<h2>Primer {i + 1}: <span class='primer'>{highlighted_primer_html}</span></h2><pre class='primer'>{html_result}</pre><hr>"
     if output_path and all_html_content:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         full_html = f"""
@@ -354,19 +364,19 @@ if __name__ == '__main__':
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>ABM-PCR Primer Design Results</title>
+            <title>ARMS-PCR Primer Design Results</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 20px; }}
                 .red {{ color: red; font-weight: bold; }}
                 .blue {{ color: blue; font-weight: bold; }}
-                pre {{ white-space: pre-wrap; }}
+                pre {{ white-space: pre-wrap; font-family: monospace; font-size: 1.1em; }}
                 h2 {{ color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }}
                 hr {{ border: 0; border-top: 1px solid #eee; margin: 20px 0; }}
                 .primer {{ font-family: monospace; font-size: 1.1em; }}
             </style>
         </head>
         <body>
-            <h1>ABM-PCR Primer Design Results</h1>
+            <h1>ARMS-PCR Primer Design Results</h1>
             <p>Generated on: {timestamp}</p>
             <p>A total of {len(primers)} primer sequences were found</p>
             {all_html_content}
@@ -376,12 +386,12 @@ if __name__ == '__main__':
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(full_html)
-            print(f"All results have been merged and saved to HTML file: {output_path}")
+            ScreenOutput.add(f"All results have been merged and saved to HTML file: {output_path}")
         except Exception as e:
-            print(f"Error saving HTML file: {str(e)}")
-            print("Please check file permissions or try a different output path")
+            ScreenOutput.add(f"Error saving HTML file: {str(e)}")
+            ScreenOutput.add("Please check file permissions or try a different output path")
     elif output_path and not all_html_content:
-        print("Warning: No primer sequences found, HTML file not generated.")
+        ScreenOutput.add("Warning: No primer sequences found, HTML file not generated.")
     elif all_html_content and not output_path:
-        print("Note: Primer analysis results generated but no output path specified, not saved to file.")
-        print("Use --output parameter to specify HTML output file path.")
+        ScreenOutput.add("Note: Primer analysis results generated but no output path specified, not saved to file.")
+        ScreenOutput.add("Use --output parameter to specify HTML output file path.")
