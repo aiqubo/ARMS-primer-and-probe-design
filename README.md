@@ -8,20 +8,18 @@ Primer3
 Required Python packages: sys, os, subprocess, re, json, argparse, datetime
 
 Usage:
-Command Line Arguments
-plaintext
-usage: ABM-PCR Primer Design Tool (Supports HTML Output) [-h] [--version] -f FASTA [--length LENGTH] [--nomask] [--param PARAM] [-o OUTPUT]
+
+python (Supports HTML Output) [--help] [--version] [--fasta FASTA] [--length LENGTH] [--nomask] [--param PARAM] [--output OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
-  -f FASTA, --fasta FASTA
-                        Input FASTA file (required)
+  --fasta FASTA         Input FASTA file (required)
   --length LENGTH       Length of PCR template (default: 1001)
   --nomask              Do not mask common SNPs in template
   --param PARAM         Custom parameters from JSON file (default: parameterDefault.json)
-  -o OUTPUT, --output OUTPUT
-                        Output HTML file path
+  --output OUTPUT       Output HTML file
+
 Input Requirements
 The input FASTA file must contain exactly one SNP site formatted as [WildType/Mutation], e.g., [A/G]. Example:
 > test
