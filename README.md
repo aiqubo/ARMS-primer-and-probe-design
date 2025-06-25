@@ -4,9 +4,9 @@
 The ARMS-PCR Primer Design Tool is a Python-based bioinformatics application designed to generate highly specific primers for Amplification Refractory Mutation System (ARMS) PCR. 
 
 ## Installation Requirements:
-Python 3.9+
-Primer3
-Required Python packages: sys, os, subprocess, re, json, argparse, datetime
+Python 3.9+ \
+Primer3 \
+Required Python packages: sys, os, subprocess, re, json, argparse, datetime \
 
 ## Usage:
 
